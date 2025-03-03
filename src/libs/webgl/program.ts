@@ -52,7 +52,6 @@ const loadShader = (
   gl.compileShader(shader);
 
   // Vérifier s'il a ét compilé avec succès
-  console.log(source);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     alert("Erreur lors de la compilation: " + gl.getShaderInfoLog(shader));
     gl.deleteShader(shader);

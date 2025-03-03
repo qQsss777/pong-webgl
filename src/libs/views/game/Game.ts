@@ -64,6 +64,7 @@ class Game implements IGameProperties {
    * Draw canvas
    */
   draw = () => {
+    this._context.viewport(0, 0, this.viewNode.width, this.viewNode.height);
     this._context.clearColor(0.0, 0.0, 0.0, 1.0);
     this._context.clear(
       this._context.COLOR_BUFFER_BIT | this._context.DEPTH_BUFFER_BIT,

@@ -8,20 +8,7 @@ interface IBackgroundConstructor {
 class Background extends Actor implements IBackgroundConstructor {
   backgroundColor: string;
   lineColor: string;
-  positions = new Float32Array([
-    -1.0,
-    1.0, // Coin supérieur gauche
-    1.0,
-    1.0, // Coin supérieur droit
-    1.0,
-    -1.0, // Coin inférieur droit
-    -1.0,
-    -1.0,
-    0.0,
-    1.0,
-    0.0,
-    1.0,
-  ]);
+  positions = new Float32Array([-1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]);
 
   constructor(props: IBackgroundConstructor) {
     super();
@@ -44,7 +31,8 @@ class Background extends Actor implements IBackgroundConstructor {
     const colorUniform = gl.getUniformLocation(program, "u_color");
     gl.uniform4fv(colorUniform, color);
     // appel de rendu
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, 6);
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+    console.log(gl.canvas);
   };
 }
 
