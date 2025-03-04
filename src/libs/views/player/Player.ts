@@ -1,15 +1,13 @@
-import Actor from "../common/Actor";
+import DynamicActor from "../common/DynamicActor";
 
 interface IPlayerConstructor {
-  color: string;
+  color: [number, number, number, number];
 }
 
-class Player extends Actor implements IPlayerConstructor {
-  color: string;
-
+class Player extends DynamicActor implements IPlayerConstructor {
   constructor(props: IPlayerConstructor) {
-    super();
-    this.color = props.color;
+    super(props);
+    console.log("ok");
   }
 
   /* eslint-disable */

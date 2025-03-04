@@ -1,17 +1,15 @@
-import Actor from "../common/Actor";
+import DynamicActor from "../common/DynamicActor";
 
 interface IBallConstructor {
   speed: number;
-  color: string;
+  color: [number, number, number, number];
 }
 
-class Ball extends Actor implements IBallConstructor {
-  color: string;
+class Ball extends DynamicActor implements IBallConstructor {
   speed: number;
 
   constructor(props: IBallConstructor) {
-    super();
-    this.color = props.color;
+    super(props);
     this.speed = props.speed;
   }
   /* eslint-disable */

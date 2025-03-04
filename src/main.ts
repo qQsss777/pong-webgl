@@ -5,19 +5,19 @@ import Player from "./libs/views/player/Player";
 import "./style.css";
 const appDiv = document.getElementById("app") as HTMLDivElement;
 const ball = new Ball({
-  color: "orange",
+  color: [0.0, 1.0, 0.0, 1.0],
   speed: 5,
 });
 const player = new Player({
-  color: "blue",
+  color: [0.0, 0.0, 1.0, 1.0],
 });
 const computer = new Player({
-  color: "red",
+  color: [1.0, 0.0, 0.0, 0.0],
 });
 
 const background = new Background({
-  backgroundColor: "black",
-  lineColor: "white",
+  lineColor: [1.0, 1.0, 1.0, 1.0],
+  backgroundColor: [0.0, 0.0, 0.0, 1.0],
 });
 const game = new Game({
   rootNode: appDiv,
