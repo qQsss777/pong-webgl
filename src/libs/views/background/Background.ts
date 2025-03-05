@@ -1,3 +1,9 @@
+import {
+  multiplyMatrix3D,
+  scaleMatrix,
+  translateMatrix,
+  type TMatrix3D,
+} from "../../math/matrix";
 import Actor from "../common/Actor";
 
 interface IBackgroundConstructor {
@@ -27,15 +33,20 @@ class Background extends Actor implements IBackgroundConstructor {
     0.991, -1.0, 1.0, -1.0, 1.0, 1.0, 0.991, 1.0,
   ]);
 
+  private matrix: TMatrix3D;
+
   constructor(props: IBackgroundConstructor) {
     super();
     this.backgroundColor = props.backgroundColor;
     this.lineColor = props.lineColor;
+    this.matrix = multiplyMatrix3D(translateMatrix(0, 0), scaleMatrix(1, 1));
   }
 
   draw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
     gl.useProgram(program);
     const positionAttribute = gl.getAttribLocation(program, "a_position");
+    const uMatrix = gl.getUniformLocation(program, "u_matrix");
+    gl.uniformMatrix4fv(uMatrix, false, new Float32Array(this.matrix));
     const colorUniformBack = gl.getUniformLocation(
       program,
       "u_color",

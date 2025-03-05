@@ -1,7 +1,9 @@
 export const vsSource = `
 attribute vec4 a_position;
+uniform mat4 u_matrix;
+
 void main() {
-   gl_Position = a_position;
+   gl_Position = a_position * u_matrix;
 }
 `;
 
