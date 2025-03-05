@@ -8,6 +8,7 @@ export type TCoordinates = [number, number, number];
 
 interface IActorProperties {
   draw: (gl: WebGLRenderingContext, program: WebGLProgram) => void;
+  reset: () => void;
 }
 abstract class Actor implements IActorProperties {
   protected sMatrix = scaleMatrix(1, 1);
@@ -20,6 +21,11 @@ abstract class Actor implements IActorProperties {
    * @param program shader program
    */
   abstract draw(gl: WebGLRenderingContext, program: WebGLProgram): void;
+
+  /**
+   * Reset actor
+   */
+  abstract reset(): void;
 
   /**
    * Get radius for width and height to draw circle
