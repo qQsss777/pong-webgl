@@ -10,6 +10,10 @@ class Player extends DynamicActor implements IPlayerConstructor {
     console.log("ok");
   }
 
+  reset(): void {
+    throw new Error("Method not implemented.");
+  }
+
   /* eslint-disable */
   draw = (gl: WebGLRenderingContext, program: WebGLProgram) => {};
 }

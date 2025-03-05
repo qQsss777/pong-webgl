@@ -1,3 +1,4 @@
+import type EventEmitter from "../../event/EventEmitter";
 import { generateRandomNumber } from "../../math/angle";
 import { TCoordinates } from "../common/Actor";
 import DynamicActor from "../common/DynamicActor";
@@ -5,18 +6,22 @@ import DynamicActor from "../common/DynamicActor";
 interface IBallConstructor {
   speed: number;
   color: [number, number, number, number];
+  collisionEmitter: EventEmitter;
 }
 
 /**
  * Ball Actor
  */
-class Ball extends DynamicActor implements IBallConstructor {
+export default class Ball extends DynamicActor implements IBallConstructor {
   speed: number;
-  private position: TCoordinates = [0.0, 0.0, 0.0];
+  position: TCoordinates = [0.0, 0.0, 0.0];
+  collisionEmitter: EventEmitter;
+
   private angle = generateRandomNumber(45, 135);
   constructor(props: IBallConstructor) {
     super(props);
     this.speed = props.speed;
+    this.collisionEmitter = props.collisionEmitter;
   }
 
   draw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
@@ -46,6 +51,7 @@ class Ball extends DynamicActor implements IBallConstructor {
     gl.drawArrays(gl.TRIANGLE_FAN, 0, positionsCircle.length / 3);
     if (this.position[0] === 1 || this.position[0] === -1) {
       this.angle = 180 - this.angle;
+      this.collisionEmitter.dispatch("collision", this.position[0].toString());
     } else if (this.position[1] === 1) {
       this.angle = 90 - this.angle - this.angle;
     } else if (this.position[1] === -1) {
@@ -85,6 +91,8 @@ class Ball extends DynamicActor implements IBallConstructor {
       return angle + 90;
     }
   };
-}
 
-export default Ball;
+  reset = () => {
+    this.position = [0.0, 0.0, 0.0];
+  };
+}
