@@ -6,7 +6,7 @@ import "./style.css";
 const appDiv = document.getElementById("app") as HTMLDivElement;
 const ball = new Ball({
   color: [0.0, 1.0, 0.0, 1.0],
-  speed: 5,
+  speed: 0.007,
 });
 const player = new Player({
   color: [0.0, 0.0, 1.0, 1.0],
