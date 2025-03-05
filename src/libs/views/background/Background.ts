@@ -35,6 +35,10 @@ class Background extends Actor implements IBackgroundConstructor {
     this.matrix = multiplyMatrix3D(this.tMatrix, this.sMatrix);
   }
 
+  reset(): void {
+    throw new Error("Method not implemented.");
+  }
+
   draw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
     gl.useProgram(program);
     const positionAttribute = gl.getAttribLocation(program, "a_position");
