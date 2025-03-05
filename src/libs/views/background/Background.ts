@@ -1,9 +1,4 @@
-import {
-  multiplyMatrix3D,
-  scaleMatrix,
-  translateMatrix,
-  type TMatrix3D,
-} from "../../math/matrix";
+import { multiplyMatrix3D } from "../../math/matrix";
 import Actor from "../common/Actor";
 
 interface IBackgroundConstructor {
@@ -15,31 +10,29 @@ class Background extends Actor implements IBackgroundConstructor {
   backgroundColor: [number, number, number, number];
   lineColor: [number, number, number, number];
   private positionsBack = new Float32Array([
-    -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0,
+    -1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 1.0, 0.0, -1.0, 1.0, 0.0,
   ]);
   private positionsLine = new Float32Array([
-    -0.009, -1.0, -0.009, 1.0, 0.009, 1.0, 0.009, -1.0,
+    -0.009, -1.0, 0.0, -0.009, 1.0, 0.0, 0.009, 1.0, 0.0, 0.009, -1.0, 0.0,
   ]);
   private positionsTop = new Float32Array([
-    -1.0, 0.991, 1.0, 0.991, 1.0, 1.0, -1.0, 1.0,
+    -1.0, 0.991, 0.0, 1.0, 0.991, 0.0, 1.0, 1.0, 0.0, -1.0, 1.0, 0.0,
   ]);
   private positionsBottom = new Float32Array([
-    -1.0, -0.991, 1.0, -0.991, 1.0, -1.0, -1.0, -1.0,
+    -1.0, -0.991, 0.0, 1.0, -0.991, 0.0, 1.0, -1.0, 0.0, -1.0, -1.0, 0.0,
   ]);
   private positionsLeft = new Float32Array([
-    -1.0, -1.0, -0.991, -1.0, -0.991, 1.0, -1.0, 1.0,
+    -1.0, -1.0, 0.0, -0.991, -1.0, 0.0, -0.991, 1.0, 0.0, -1.0, 1.0, 0.0,
   ]);
   private positionsRight = new Float32Array([
-    0.991, -1.0, 1.0, -1.0, 1.0, 1.0, 0.991, 1.0,
+    0.991, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 1.0, 0.0, 0.991, 1.0, 0.0,
   ]);
-
-  private matrix: TMatrix3D;
 
   constructor(props: IBackgroundConstructor) {
     super();
     this.backgroundColor = props.backgroundColor;
     this.lineColor = props.lineColor;
-    this.matrix = multiplyMatrix3D(translateMatrix(0, 0), scaleMatrix(1, 1));
+    this.matrix = multiplyMatrix3D(this.tMatrix, this.sMatrix);
   }
 
   draw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
@@ -95,7 +88,6 @@ class Background extends Actor implements IBackgroundConstructor {
       colorUniformBack,
       this.lineColor,
     );
-
     this.drawCircle(gl, positionAttribute, colorUniformBack, this.lineColor);
   };
 
@@ -118,9 +110,9 @@ class Background extends Actor implements IBackgroundConstructor {
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(positionAttr);
-    gl.vertexAttribPointer(positionAttr, 2, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(positionAttr, 3, gl.FLOAT, false, 0, 0);
     gl.uniform4fv(colorAttr, color);
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, data.length / 2);
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, data.length / 3);
   };
 
   /**
@@ -145,39 +137,19 @@ class Background extends Actor implements IBackgroundConstructor {
       const angle = (2 * Math.PI * i) / segments;
       const xInner = center[0] + radiusInnerList[0] * Math.cos(angle);
       const yInner = center[1] + radiusInnerList[1] * Math.sin(angle);
-      vertices.push(xInner, yInner);
+      vertices.push(xInner, yInner, 0.0);
       const xOuter = center[0] + radiusOuterList[0] * Math.cos(angle);
       const yOuter = center[1] + radiusOuterList[1] * Math.sin(angle);
-      vertices.push(xOuter, yOuter);
+      vertices.push(xOuter, yOuter, 0.0);
     }
     const positionsCircle = new Float32Array(vertices);
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positionsCircle, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(positionAttr);
-    gl.vertexAttribPointer(positionAttr, 2, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(positionAttr, 3, gl.FLOAT, false, 0, 0);
     gl.uniform4fv(colorAttr, color);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, positionsCircle.length / 2);
-  };
-
-  /**
-   * Get radius for width and height to draw circle
-   * @param gl webgl rendering context
-   * @param radiusSource radius maximum
-   * @returns [radius for width, radius for height]
-   */
-  getRadius = (
-    gl: WebGLRenderingContext,
-    radiusSource: number,
-  ): [number, number] => {
-    const heightSuperior = gl.canvas.height > gl.canvas.width;
-    if (heightSuperior) {
-      const radiusY = radiusSource * (gl.canvas.width / gl.canvas.height);
-      return [radiusSource, radiusY];
-    } else {
-      const radiusX = radiusSource * (gl.canvas.height / gl.canvas.width);
-      return [radiusX, radiusSource];
-    }
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, positionsCircle.length / 3);
   };
 }
 

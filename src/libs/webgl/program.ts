@@ -1,3 +1,6 @@
+/**
+ * matrix not necessery but i want to learn how to use it
+ */
 export const vsSource = `
 attribute vec4 a_position;
 uniform mat4 u_matrix;

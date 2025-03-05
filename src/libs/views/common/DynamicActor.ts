@@ -5,6 +5,7 @@ interface IDynamicActorProperties {
 }
 abstract class DynamicActor extends Actor implements IDynamicActorProperties {
   color: [number, number, number, number];
+  protected direction = true;
   constructor(props: IDynamicActorProperties) {
     super();
     this.color = props.color;

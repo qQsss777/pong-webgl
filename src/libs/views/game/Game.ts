@@ -70,9 +70,10 @@ class Game implements IGameProperties {
       this._context.COLOR_BUFFER_BIT | this._context.DEPTH_BUFFER_BIT,
     );
     this.background.draw(this._context, this._program);
+    this.ball.draw(this._context, this._program);
+
     //this.players.forEach((pl) => pl.draw(this._context, this._program))
-    //this.ball.draw(this._context, this._program)
-    //window.requestAnimationFrame(this.draw.bind(this))
+    window.requestAnimationFrame(this.draw.bind(this));
   };
 }
 
