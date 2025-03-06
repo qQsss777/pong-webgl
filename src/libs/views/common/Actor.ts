@@ -1,3 +1,4 @@
+import EventEmitter from "../../event/EventEmitter";
 import {
   multiplyMatrix3D,
   scaleMatrix,
@@ -10,7 +11,7 @@ interface IActorProperties {
   draw: (gl: WebGLRenderingContext, program: WebGLProgram) => void;
   reset: () => void;
 }
-abstract class Actor implements IActorProperties {
+abstract class Actor extends EventEmitter implements IActorProperties {
   protected sMatrix = scaleMatrix(1, 1);
   protected tMatrix = translateMatrix(0, 0);
   protected matrix = multiplyMatrix3D(this.tMatrix, this.sMatrix);

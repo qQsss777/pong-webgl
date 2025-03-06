@@ -1,12 +1,9 @@
-import type EventEmitter from "../../event/EventEmitter";
-import { generateRandomNumber } from "../../math/angle";
 import { TCoordinates } from "../common/Actor";
 import DynamicActor from "../common/DynamicActor";
 
 interface IBallConstructor {
   speed: number;
   color: [number, number, number, number];
-  collisionEmitter: EventEmitter;
 }
 
 /**
@@ -15,19 +12,18 @@ interface IBallConstructor {
 export default class Ball extends DynamicActor implements IBallConstructor {
   speed: number;
   position: TCoordinates = [0.0, 0.0, 0.0];
-  collisionEmitter: EventEmitter;
+  _angle: number;
 
-  private angle = generateRandomNumber(45, 135);
   constructor(props: IBallConstructor) {
     super(props);
     this.speed = props.speed;
-    this.collisionEmitter = props.collisionEmitter;
+    this._angle = this._generateRandomNumber(45, 135);
   }
 
   draw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
     gl.useProgram(program);
     const positionAttribute = gl.getAttribLocation(program, "a_position");
-    this.updatePosition(this.position, this.angle, this.speed);
+    this._updatePosition(this.position, this._angle, this.speed);
     const colorUniformBack = gl.getUniformLocation(
       program,
       "u_color",
@@ -50,13 +46,30 @@ export default class Ball extends DynamicActor implements IBallConstructor {
     gl.uniform4fv(colorUniformBack, this.color);
     gl.drawArrays(gl.TRIANGLE_FAN, 0, positionsCircle.length / 3);
     if (this.position[0] === 1 || this.position[0] === -1) {
-      this.angle = 180 - this.angle;
-      this.collisionEmitter.dispatch("collision", this.position[0].toString());
+      this._angle = 180 - this._angle;
+      this.dispatch("collision", this.position[0].toString());
     } else if (this.position[1] === 1) {
-      this.angle = 90 - this.angle - this.angle;
+      this._angle = 90 - this._angle - this._angle;
     } else if (this.position[1] === -1) {
-      this.angle = Math.abs(90 + this.angle + this.angle);
+      this._angle = Math.abs(90 + this._angle + this._angle);
     }
+  };
+
+  reset = () => {
+    this.position = [0.0, 0.0, 0.0];
+    this._angle = this._generateRandomNumber(45, 135);
+  };
+
+  increaseLevel: () => void;
+
+  /**
+   * Calculate angle in cartesian plan
+   * @param start mininum value for angle
+   * @param end maximum value for angle
+   * @returns angle in cartesian plan
+   */
+  _generateRandomNumber = (start: number, end: number): number => {
+    return Math.floor(Math.random() * (start - end + 1) + end) - 90;
   };
 
   /**
@@ -66,7 +79,7 @@ export default class Ball extends DynamicActor implements IBallConstructor {
    * @param distance distance to use for translation
    * @returns update Position
    */
-  updatePosition = (
+  _updatePosition = (
     origin: [number, number, number],
     angle: number,
     distance: number,
@@ -82,17 +95,5 @@ export default class Ball extends DynamicActor implements IBallConstructor {
     );
     origin[0] = deltaX;
     origin[1] = deltaY;
-  };
-
-  getNewAngle = (angle: number): number => {
-    if (angle >= 0 || angle <= 90) {
-      return angle + 90;
-    } else if (angle > 90 || angle <= 180) {
-      return angle + 90;
-    }
-  };
-
-  reset = () => {
-    this.position = [0.0, 0.0, 0.0];
   };
 }
