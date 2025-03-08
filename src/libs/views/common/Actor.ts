@@ -2,19 +2,36 @@ import EventEmitter from "../../event/EventEmitter";
 import {
   multiplyMatrix3D,
   scaleMatrix,
+  TMatrix3D,
   translateMatrix,
 } from "../../math/matrix";
 
 export type TCoordinates = [number, number, number];
 
 interface IActorProperties {
+  translateX: number;
+  translateY: number;
+  scaleX: number;
+  scaleY: number;
   draw: (gl: WebGLRenderingContext, program: WebGLProgram) => void;
   reset: () => void;
+  initializeBuffers: (gl: WebGLRenderingContext) => void;
 }
 abstract class Actor extends EventEmitter implements IActorProperties {
-  protected sMatrix = scaleMatrix(1, 1);
-  protected tMatrix = translateMatrix(0, 0);
-  protected matrix = multiplyMatrix3D(this.tMatrix, this.sMatrix);
+  translateX = 0;
+  translateY = 0;
+  scaleX = 1;
+  scaleY = 1;
+  protected sMatrix: TMatrix3D;
+  protected tMatrix: TMatrix3D;
+  protected matrix: TMatrix3D;
+
+  constructor() {
+    super();
+    this.sMatrix = scaleMatrix(this.scaleX, this.scaleY);
+    this.tMatrix = translateMatrix(this.translateX, this.translateY);
+    this.matrix = multiplyMatrix3D(this.tMatrix, this.sMatrix);
+  }
 
   /**
    * Draw actor
@@ -27,6 +44,12 @@ abstract class Actor extends EventEmitter implements IActorProperties {
    * Reset actor
    */
   abstract reset(): void;
+
+  /**
+   * Create buffer and store them in memory
+   * @param gl WebGLRenderingContext
+   */
+  abstract initializeBuffers: (gl: WebGLRenderingContext) => void;
 
   /**
    * Get radius for width and height to draw circle

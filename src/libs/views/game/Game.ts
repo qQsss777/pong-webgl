@@ -76,11 +76,7 @@ class Game implements IGameProperties {
    * Draw canvas
    */
   draw = () => {
-    this._context.viewport(0, 0, this.viewNode.width, this.viewNode.height);
-    this._context.clearColor(0.0, 0.0, 0.0, 1.0);
-    this._context.clear(
-      this._context.COLOR_BUFFER_BIT | this._context.DEPTH_BUFFER_BIT,
-    );
+    this._clearCanvas();
     this.background.draw(this._context, this._program);
     this.players.forEach((pl) => pl.draw(this._context, this._program));
     this.ball.draw(this._context, this._program);
@@ -88,15 +84,30 @@ class Game implements IGameProperties {
       window.requestAnimationFrame(this.draw.bind(this));
   };
 
+  redraw = () => {
+    this._clearCanvas();
+    this.background.draw(this._context, this._program);
+    this.players.forEach((pl) => pl.redraw(this._context, this._program));
+    this.ball.redraw(this._context, this._program);
+  };
+
   _initializeListener = () => {
     this.canvasResizeObserver.initialize(
       this.rootNode,
       this.viewNode,
-      this.draw,
+      this.redraw,
     );
     this.ball.subscribe("collision", () => {
-      this.pause();
+      // this.pause();
     });
+  };
+
+  _clearCanvas = () => {
+    this._context.viewport(0, 0, this.viewNode.width, this.viewNode.height);
+    this._context.clearColor(0.0, 0.0, 0.0, 1.0);
+    this._context.clear(
+      this._context.COLOR_BUFFER_BIT | this._context.DEPTH_BUFFER_BIT,
+    );
   };
 }
 

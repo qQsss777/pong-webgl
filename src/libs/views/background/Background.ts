@@ -1,4 +1,3 @@
-import { multiplyMatrix3D } from "../../math/matrix";
 import Actor from "../common/Actor";
 
 interface IBackgroundConstructor {
@@ -48,7 +47,6 @@ class Background extends Actor implements IBackgroundConstructor {
     super();
     this.backgroundColor = props.backgroundColor;
     this.lineColor = props.lineColor;
-    this.matrix = multiplyMatrix3D(this.tMatrix, this.sMatrix);
   }
 
   reset(): void {
@@ -57,7 +55,7 @@ class Background extends Actor implements IBackgroundConstructor {
 
   draw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
     if (!this._positionsBackBuffer) {
-      this._initializeBuffers(gl);
+      this.initializeBuffers(gl);
       this._assignBufferInfos();
     }
     gl.useProgram(program);
@@ -138,11 +136,7 @@ class Background extends Actor implements IBackgroundConstructor {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, positionsCircle.length / 3);
   };
 
-  /**
-   * Create buffer and store them in memory
-   * @param gl WebGLRenderingContext
-   */
-  _initializeBuffers = (gl: WebGLRenderingContext): void => {
+  initializeBuffers = (gl: WebGLRenderingContext): void => {
     this._positionsBackBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this._positionsBackBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this._positionsBack, gl.STATIC_DRAW);

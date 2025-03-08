@@ -6,6 +6,7 @@ interface IDynamicActorConstructor {
 
 interface IDynamicActorProperties extends IDynamicActorConstructor {
   increaseLevel: () => void;
+  redraw: (gl: WebGLRenderingContext, program: WebGLProgram) => void;
 }
 
 abstract class DynamicActor extends Actor implements IDynamicActorProperties {
@@ -17,6 +18,7 @@ abstract class DynamicActor extends Actor implements IDynamicActorProperties {
   }
 
   abstract increaseLevel: () => void;
+  abstract redraw: (gl: WebGLRenderingContext, program: WebGLProgram) => void;
 }
 
 export default DynamicActor;

@@ -12,6 +12,7 @@ interface IBallConstructor {
 export default class Ball extends DynamicActor implements IBallConstructor {
   speed: number;
   position: TCoordinates = [0.0, 0.0, 0.0];
+  _positionBuffer: WebGLBuffer;
   _angle: number;
 
   constructor(props: IBallConstructor) {
@@ -21,9 +22,31 @@ export default class Ball extends DynamicActor implements IBallConstructor {
   }
 
   draw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
+    if (!this._positionBuffer) {
+      this.initializeBuffers(gl);
+    }
+    this._updatePosition(this.position, this._angle, this.speed);
+    this._drawBall(gl, program);
+    this._checkCollision();
+  };
+
+  redraw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
+    if (!this._positionBuffer) {
+      this.initializeBuffers(gl);
+    }
+    this._drawBall(gl, program);
+  };
+
+  reset = () => {
+    this.position = [0.0, 0.0, 0.0];
+    this._angle = this._generateRandomNumber(45, 135);
+  };
+
+  increaseLevel: () => void;
+
+  _drawBall = (gl: WebGLRenderingContext, program: WebGLProgram) => {
     gl.useProgram(program);
     const positionAttribute = gl.getAttribLocation(program, "a_position");
-    this._updatePosition(this.position, this._angle, this.speed);
     const colorUniformBack = gl.getUniformLocation(
       program,
       "u_color",
@@ -38,13 +61,19 @@ export default class Ball extends DynamicActor implements IBallConstructor {
       vertices.push(x, y, 0.0);
     }
     const positionsCircle = new Float32Array(vertices);
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positionsCircle, gl.STATIC_DRAW);
     gl.vertexAttribPointer(positionAttribute, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(positionAttribute);
     gl.uniform4fv(colorUniformBack, this.color);
     gl.drawArrays(gl.TRIANGLE_FAN, 0, positionsCircle.length / 3);
+  };
+
+  initializeBuffers = (gl: WebGLRenderingContext) => {
+    this._positionBuffer = gl.createBuffer();
+  };
+
+  _checkCollision = () => {
     if (this.position[0] === 1 || this.position[0] === -1) {
       this._angle = 180 - this._angle;
       this.dispatch("collision", this.position[0].toString());
@@ -54,13 +83,6 @@ export default class Ball extends DynamicActor implements IBallConstructor {
       this._angle = Math.abs(90 + this._angle + this._angle);
     }
   };
-
-  reset = () => {
-    this.position = [0.0, 0.0, 0.0];
-    this._angle = this._generateRandomNumber(45, 135);
-  };
-
-  increaseLevel: () => void;
 
   /**
    * Calculate angle in cartesian plan

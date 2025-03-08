@@ -38,11 +38,7 @@ const game = new Game({
   canvasResizeObserver: new CanvasResizeObserver(),
 });
 
-const stopCollisionSubscribe = ball.subscribe("collision", () => {
-  game.pause();
-});
 window.addEventListener("beforeunload", () => {
-  stopCollisionSubscribe();
   game.destroy();
 });
 
