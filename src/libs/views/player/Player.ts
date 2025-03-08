@@ -29,6 +29,9 @@ class Player extends DynamicActor implements IPlayerConstructor {
     this.side = props.side;
     this._initializePosition();
     this.playerController = props.playerController ?? undefined;
+    if (this.playerController) {
+      this._initializeListeners();
+    }
   }
 
   reset(): void {
@@ -40,7 +43,7 @@ class Player extends DynamicActor implements IPlayerConstructor {
       this.initializeBuffers(gl);
     }
     if (!this.playerController) {
-      this._updateMatrices();
+      this._updateMatrices(this.direction);
     }
     this._drawElement(gl, program);
   };
@@ -64,6 +67,9 @@ class Player extends DynamicActor implements IPlayerConstructor {
     );
   };
 
+  /**
+   * Initialize positions
+   */
   _initializePosition = () => {
     if (this.side === "right") {
       this.positions = [
@@ -117,18 +123,45 @@ class Player extends DynamicActor implements IPlayerConstructor {
   /**
    * Update matrice to calcule new positions
    */
-  _updateMatrices = (): void => {
-    this.translateY = this.direction
+  _updateMatrices = (direction: boolean): void => {
+    this.translateY = direction
       ? this.translateY + this.speed
       : this.translateY - this.speed;
     if (this.translateY >= 1 + this._height) {
       this.direction = false;
+      this.translateY = 1 + this._height;
     } else if (this.translateY <= 0) {
       this.direction = true;
+      this.translateY = 0;
     }
     this.tMatrix = translateMatrix(this.translateX, this.translateY);
     this.sMatrix = scaleMatrix(this.scaleX, this.scaleY);
     this.matrix = multiplyMatrix3D(this.tMatrix, this.sMatrix);
+  };
+
+  /**
+   * intialize listener for player
+   */
+  _initializeListeners = () => {
+    this.playerController.initialize([
+      {
+        name: "keydown",
+        callback: this._listenArrowsPressed,
+      },
+    ]);
+  };
+
+  /**
+   * Listen keyboard and arrow up / down press
+   * @param event envent keyboard
+   */
+  _listenArrowsPressed = (event: KeyboardEvent) => {
+    const key = event.key;
+    if (key === "ArrowUp") {
+      this._updateMatrices(true);
+    } else if (key === "ArrowDown") {
+      this._updateMatrices(false);
+    }
   };
 }
 

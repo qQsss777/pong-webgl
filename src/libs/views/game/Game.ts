@@ -84,6 +84,9 @@ class Game implements IGameProperties {
       window.requestAnimationFrame(this.draw.bind(this));
   };
 
+  /**
+   * Re draw element at current position
+   */
   redraw = () => {
     this._clearCanvas();
     this.background.draw(this._context, this._program);
@@ -91,6 +94,9 @@ class Game implements IGameProperties {
     this.ball.redraw(this._context, this._program);
   };
 
+  /**
+   * Initialize listener : resize and collition detector
+   */
   _initializeListener = () => {
     this.canvasResizeObserver.initialize(
       this.rootNode,
@@ -102,6 +108,9 @@ class Game implements IGameProperties {
     });
   };
 
+  /**
+   * Clear canvas with black color
+   */
   _clearCanvas = () => {
     this._context.viewport(0, 0, this.viewNode.width, this.viewNode.height);
     this._context.clearColor(0.0, 0.0, 0.0, 1.0);
