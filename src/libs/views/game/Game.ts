@@ -1,7 +1,7 @@
 import type Ball from "../ball/Ball";
 import type Player from "../player/Player";
 import type Background from "../background/Background";
-import { canvasResizeObserver } from "../../html/utils/listeners";
+import type CanvasResizeObserver from "../../html/CanvasResizeObserver";
 import { initShaderProgram } from "../../webgl/program";
 
 interface IGameConstructor {
@@ -9,10 +9,12 @@ interface IGameConstructor {
   background: Background;
   ball: Ball;
   players: Player[];
+  canvasResizeObserver: CanvasResizeObserver;
 }
 interface IGameProperties extends IGameConstructor {
   start: () => void;
   destroy: () => void;
+  pause: () => void;
 }
 
 class Game implements IGameProperties {
@@ -21,9 +23,10 @@ class Game implements IGameProperties {
   ball: Ball;
   players: Player[];
   background: Background;
-  _rs: ResizeObserver;
+  canvasResizeObserver: CanvasResizeObserver;
   _context: WebGLRenderingContext;
   _program: WebGLProgram;
+  _status: "stopped" | "started" = "stopped";
 
   constructor(props: IGameConstructor) {
     this.rootNode = props.rootNode;
@@ -39,16 +42,18 @@ class Game implements IGameProperties {
     }
     this._program = program;
     this._context = ctx;
-    this._rs = canvasResizeObserver(this.rootNode, this.viewNode, this.draw);
+    this.canvasResizeObserver = props.canvasResizeObserver;
     this.ball = props.ball;
     this.players = props.players;
     this.background = props.background;
+    this._initializeListener();
   }
 
   /**
    * Display start screen
    */
   start = () => {
+    this._status = "started";
     this.draw();
   };
 
@@ -56,24 +61,53 @@ class Game implements IGameProperties {
    * Remove game node and resize observer
    */
   destroy = () => {
-    this._rs.disconnect();
+    this.canvasResizeObserver.reset();
     this.rootNode.removeChild(this.viewNode);
+  };
+
+  /**
+   * set game in pause mode
+   */
+  pause = () => {
+    this._status = "stopped";
   };
 
   /**
    * Draw canvas
    */
   draw = () => {
+    this._clearCanvas();
+    this.background.draw(this._context, this._program);
+    this.players.forEach((pl) => pl.draw(this._context, this._program));
+    this.ball.draw(this._context, this._program);
+    if (this._status === "started")
+      window.requestAnimationFrame(this.draw.bind(this));
+  };
+
+  redraw = () => {
+    this._clearCanvas();
+    this.background.draw(this._context, this._program);
+    this.players.forEach((pl) => pl.redraw(this._context, this._program));
+    this.ball.redraw(this._context, this._program);
+  };
+
+  _initializeListener = () => {
+    this.canvasResizeObserver.initialize(
+      this.rootNode,
+      this.viewNode,
+      this.redraw,
+    );
+    this.ball.subscribe("collision", () => {
+      // this.pause();
+    });
+  };
+
+  _clearCanvas = () => {
     this._context.viewport(0, 0, this.viewNode.width, this.viewNode.height);
     this._context.clearColor(0.0, 0.0, 0.0, 1.0);
     this._context.clear(
       this._context.COLOR_BUFFER_BIT | this._context.DEPTH_BUFFER_BIT,
     );
-    this.background.draw(this._context, this._program);
-    this.ball.draw(this._context, this._program);
-
-    //this.players.forEach((pl) => pl.draw(this._context, this._program))
-    window.requestAnimationFrame(this.draw.bind(this));
   };
 }
 

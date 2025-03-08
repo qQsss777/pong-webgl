@@ -1,4 +1,3 @@
-import { multiplyMatrix3D } from "../../math/matrix";
 import Actor from "../common/Actor";
 
 interface IBackgroundConstructor {
@@ -6,33 +5,48 @@ interface IBackgroundConstructor {
   lineColor: [number, number, number, number];
 }
 
+interface IStaticRectangle {
+  color: [number, number, number, number];
+  buffer: WebGLBuffer;
+}
+
 class Background extends Actor implements IBackgroundConstructor {
   backgroundColor: [number, number, number, number];
   lineColor: [number, number, number, number];
-  private positionsBack = new Float32Array([
+  _positionsBack = new Float32Array([
     -1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 1.0, 0.0, -1.0, 1.0, 0.0,
   ]);
-  private positionsLine = new Float32Array([
+  _positionsBackBuffer: WebGLBuffer;
+
+  _positionsLine = new Float32Array([
     -0.009, -1.0, 0.0, -0.009, 1.0, 0.0, 0.009, 1.0, 0.0, 0.009, -1.0, 0.0,
   ]);
-  private positionsTop = new Float32Array([
+  _positionsLineBuffer: WebGLBuffer;
+  _positionsTop = new Float32Array([
     -1.0, 0.991, 0.0, 1.0, 0.991, 0.0, 1.0, 1.0, 0.0, -1.0, 1.0, 0.0,
   ]);
-  private positionsBottom = new Float32Array([
+  _positionsTopBuffer: WebGLBuffer;
+
+  _positionsBottom = new Float32Array([
     -1.0, -0.991, 0.0, 1.0, -0.991, 0.0, 1.0, -1.0, 0.0, -1.0, -1.0, 0.0,
   ]);
-  private positionsLeft = new Float32Array([
+  _positionsBottomBuffer: WebGLBuffer;
+
+  _positionsLeft = new Float32Array([
     -1.0, -1.0, 0.0, -0.991, -1.0, 0.0, -0.991, 1.0, 0.0, -1.0, 1.0, 0.0,
   ]);
-  private positionsRight = new Float32Array([
+  _positionsLeftBuffer: WebGLBuffer;
+
+  _positionsRight = new Float32Array([
     0.991, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 1.0, 0.0, 0.991, 1.0, 0.0,
   ]);
+  _positionsRightBuffer: WebGLBuffer;
+  _staticRectangles: IStaticRectangle[];
 
   constructor(props: IBackgroundConstructor) {
     super();
     this.backgroundColor = props.backgroundColor;
     this.lineColor = props.lineColor;
-    this.matrix = multiplyMatrix3D(this.tMatrix, this.sMatrix);
   }
 
   reset(): void {
@@ -40,6 +54,10 @@ class Background extends Actor implements IBackgroundConstructor {
   }
 
   draw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
+    if (!this._positionsBackBuffer) {
+      this.initializeBuffers(gl);
+      this._assignBufferInfos();
+    }
     gl.useProgram(program);
     const positionAttribute = gl.getAttribLocation(program, "a_position");
     const uMatrix = gl.getUniformLocation(program, "u_matrix");
@@ -49,74 +67,36 @@ class Background extends Actor implements IBackgroundConstructor {
       "u_color",
     ) as WebGLUniformLocation;
     // background
-    this.drawTriangles(
+    this._drawRectangles(
       gl,
       positionAttribute,
-      this.positionsBack,
       colorUniformBack,
-      this.backgroundColor,
+      this._staticRectangles,
     );
-    // line
-    this.drawTriangles(
-      gl,
-      positionAttribute,
-      this.positionsLine,
-      colorUniformBack,
-      this.lineColor,
-    );
-    this.drawTriangles(
-      gl,
-      positionAttribute,
-      this.positionsTop,
-      colorUniformBack,
-      this.lineColor,
-    );
-    this.drawTriangles(
-      gl,
-      positionAttribute,
-      this.positionsBottom,
-      colorUniformBack,
-      this.lineColor,
-    );
-    this.drawTriangles(
-      gl,
-      positionAttribute,
-      this.positionsLeft,
-      colorUniformBack,
-      this.lineColor,
-    );
-    this.drawTriangles(
-      gl,
-      positionAttribute,
-      this.positionsRight,
-      colorUniformBack,
-      this.lineColor,
-    );
-    this.drawCircle(gl, positionAttribute, colorUniformBack, this.lineColor);
+    this._drawCircle(gl, positionAttribute, colorUniformBack, this.lineColor);
   };
 
   /**
    * draw triangles data
    * @param gl webgl rendering context
    * @param positionAttr position attribute from shader program
-   * @param data vertices data
    * @param colorAttr color uniform from shader program
-   * @param color color
+   * @param buffersInfos list of buffer and color associated
    */
-  private drawTriangles = (
+  _drawRectangles = (
     gl: WebGLRenderingContext,
     positionAttr: GLint,
-    data: Float32Array,
     colorAttr: WebGLUniformLocation,
-    color: [number, number, number, number],
+    buffersInfos: IStaticRectangle[],
   ) => {
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(positionAttr);
-    gl.vertexAttribPointer(positionAttr, 3, gl.FLOAT, false, 0, 0);
-    gl.uniform4fv(colorAttr, color);
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, data.length / 3);
+    buffersInfos.forEach((bi) => {
+      const { buffer, color } = bi;
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.enableVertexAttribArray(positionAttr);
+      gl.vertexAttribPointer(positionAttr, 3, gl.FLOAT, false, 0, 0);
+      gl.uniform4fv(colorAttr, color);
+      gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+    });
   };
 
   /**
@@ -126,7 +106,7 @@ class Background extends Actor implements IBackgroundConstructor {
    * @param colorAttr color uniform from shader program
    * @param color color
    */
-  private drawCircle = (
+  _drawCircle = (
     gl: WebGLRenderingContext,
     positionAttr: GLint,
     colorAttr: WebGLUniformLocation,
@@ -154,6 +134,64 @@ class Background extends Actor implements IBackgroundConstructor {
     gl.vertexAttribPointer(positionAttr, 3, gl.FLOAT, false, 0, 0);
     gl.uniform4fv(colorAttr, color);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, positionsCircle.length / 3);
+  };
+
+  initializeBuffers = (gl: WebGLRenderingContext): void => {
+    this._positionsBackBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._positionsBackBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this._positionsBack, gl.STATIC_DRAW);
+
+    this._positionsBottomBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._positionsBottomBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this._positionsBottom, gl.STATIC_DRAW);
+
+    this._positionsLeftBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._positionsLeftBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this._positionsLeft, gl.STATIC_DRAW);
+
+    this._positionsRightBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._positionsRightBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this._positionsRight, gl.STATIC_DRAW);
+
+    this._positionsTopBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._positionsTopBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this._positionsTop, gl.STATIC_DRAW);
+
+    this._positionsLineBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._positionsLineBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this._positionsLine, gl.STATIC_DRAW);
+  };
+
+  /**
+   * Assign buffer and color to the list of static rectangles to draw
+   */
+  _assignBufferInfos = () => {
+    this._staticRectangles = [
+      {
+        buffer: this._positionsBackBuffer,
+        color: this.backgroundColor,
+      },
+      {
+        buffer: this._positionsLineBuffer,
+        color: this.lineColor,
+      },
+      {
+        buffer: this._positionsBottomBuffer,
+        color: this.lineColor,
+      },
+      {
+        buffer: this._positionsTopBuffer,
+        color: this.lineColor,
+      },
+      {
+        buffer: this._positionsRightBuffer,
+        color: this.lineColor,
+      },
+      {
+        buffer: this._positionsLeftBuffer,
+        color: this.lineColor,
+      },
+    ];
   };
 }
 
