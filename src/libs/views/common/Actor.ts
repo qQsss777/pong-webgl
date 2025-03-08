@@ -9,6 +9,8 @@ import {
 export type TCoordinates = [number, number, number];
 
 interface IActorProperties {
+  directionX: boolean;
+  directionY: boolean;
   translateX: number;
   translateY: number;
   scaleX: number;
@@ -18,6 +20,8 @@ interface IActorProperties {
   initializeBuffers: (gl: WebGLRenderingContext) => void;
 }
 abstract class Actor extends EventEmitter implements IActorProperties {
+  directionX = true;
+  directionY = true;
   translateX = 0;
   translateY = 0;
   scaleX = 1;

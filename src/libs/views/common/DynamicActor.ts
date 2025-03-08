@@ -11,14 +11,23 @@ interface IDynamicActorProperties extends IDynamicActorConstructor {
 
 abstract class DynamicActor extends Actor implements IDynamicActorProperties {
   color: [number, number, number, number];
-  protected direction = true;
+  position: number[];
   constructor(props: IDynamicActorConstructor) {
     super();
     this.color = props.color;
+    this.position = [];
   }
 
   abstract increaseLevel: () => void;
+  /**
+   * Redraw Actor a the same coordinates.
+   */
   abstract redraw: (gl: WebGLRenderingContext, program: WebGLProgram) => void;
+  /**
+   * Get new translation
+   * @returns update Position
+   */
+  abstract _updateMatrices: () => void;
 }
 
 export default DynamicActor;
