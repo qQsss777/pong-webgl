@@ -1,3 +1,4 @@
+import { multiplyMatrix3D, translateMatrix } from "../../math/matrix";
 import { TCoordinates } from "../common/Actor";
 import DynamicActor from "../common/DynamicActor";
 
@@ -11,29 +12,35 @@ interface IBallConstructor {
  */
 export default class Ball extends DynamicActor implements IBallConstructor {
   speed: number;
-  position: TCoordinates = [0.0, 0.0, 0.0];
+  radiusSource = 0.075;
+  radiusY = 0.075;
+  radiusX = 0.075;
+  _angleLimitInf = 45;
+  _angleLimitSup = 135;
+
+  _center: TCoordinates = [0.0, 0.0, 0.0];
   _positionBuffer: WebGLBuffer;
   _angle: number;
 
   constructor(props: IBallConstructor) {
     super(props);
     this.speed = props.speed;
-    this._angle = this._generateRandomNumber(45, 135);
+    this._angle = this._generateRandomNumber(
+      this._angleLimitInf,
+      this._angleLimitSup,
+    );
   }
 
   draw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
     if (!this._positionBuffer) {
       this.initializeBuffers(gl);
     }
-    this._updatePosition(this.position, this._angle, this.speed);
+    this._updateMatrices();
     this._drawBall(gl, program);
-    this._checkCollision();
   };
 
   redraw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
-    if (!this._positionBuffer) {
-      this.initializeBuffers(gl);
-    }
+    this.initializeBuffers(gl);
     this._drawBall(gl, program);
   };
 
@@ -51,37 +58,33 @@ export default class Ball extends DynamicActor implements IBallConstructor {
       program,
       "u_color",
     ) as WebGLUniformLocation;
-    const segments = 360;
-    const vertices = [];
-    const radius = this.getRadius(gl, 0.075);
-    for (let i = 0; i <= segments; i++) {
-      const angle = (2 * Math.PI * i) / segments;
-      const x = this.position[0] + radius[0] * Math.cos(angle);
-      const y = this.position[1] + radius[1] * Math.sin(angle);
-      vertices.push(x, y, 0.0);
-    }
-    const positionsCircle = new Float32Array(vertices);
     gl.bindBuffer(gl.ARRAY_BUFFER, this._positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, positionsCircle, gl.STATIC_DRAW);
     gl.vertexAttribPointer(positionAttribute, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(positionAttribute);
+    const uMatrix = gl.getUniformLocation(program, "u_matrix");
+    gl.uniformMatrix4fv(uMatrix, false, new Float32Array(this.matrix));
     gl.uniform4fv(colorUniformBack, this.color);
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, positionsCircle.length / 3);
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, this.position.length / 3);
   };
 
   initializeBuffers = (gl: WebGLRenderingContext) => {
     this._positionBuffer = gl.createBuffer();
-  };
-
-  _checkCollision = () => {
-    if (this.position[0] === 1 || this.position[0] === -1) {
-      this._angle = 180 - this._angle;
-      this.dispatch("collision", this.position[0].toString());
-    } else if (this.position[1] === 1) {
-      this._angle = 90 - this._angle - this._angle;
-    } else if (this.position[1] === -1) {
-      this._angle = Math.abs(90 + this._angle + this._angle);
+    const segments = 360;
+    const radius = this.getRadius(gl, this.radiusSource);
+    this.radiusX = radius[0];
+    this.radiusY = radius[1];
+    for (let i = 0; i <= segments; i++) {
+      const angle = (2 * Math.PI * i) / segments;
+      const x = this._center[0] + radius[0] * Math.cos(angle);
+      const y = this._center[1] + radius[1] * Math.sin(angle);
+      this.position.push(x, y, 0.0);
     }
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._positionBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(this.position),
+      gl.STATIC_DRAW,
+    );
   };
 
   /**
@@ -94,28 +97,63 @@ export default class Ball extends DynamicActor implements IBallConstructor {
     return Math.floor(Math.random() * (start - end + 1) + end) - 90;
   };
 
+  _updateMatrices = (): void => {
+    const currentX = this.translateX;
+    const currentY = this.translateY;
+    const rad = this._angle * (Math.PI / 180);
+    const dx = Math.max(
+      Math.min(this._center[0] + this.speed * Math.cos(rad), 1),
+      -1,
+    );
+    const dy = Math.max(
+      Math.min(this._center[0] + this.speed * Math.sin(rad), 1),
+      -1,
+    );
+    this.translateX = this.directionX
+      ? this.translateX + dx
+      : this.translateX - dx;
+    this.translateY = this.directionY
+      ? this.translateY + dy
+      : this.translateY - dy;
+
+    if (this.translateX >= 1 - this.radiusX) {
+      this.directionX = false;
+      this.translateX = currentX;
+      this._processCollisionX();
+    } else if (this.translateX <= -1) {
+      this.directionX = true;
+      this.translateX = currentX;
+      this._processCollisionX();
+    }
+    if (this.translateY >= 1 - this.radiusY) {
+      this.translateY = currentY;
+      this._processCollisionY();
+      this.directionY = false;
+    } else if (this.translateY <= -1 + this.radiusY) {
+      this.translateY = -1 + this.radiusY;
+      this._processCollisionY();
+      this.directionY = true;
+    }
+    this.tMatrix = translateMatrix(this.translateX, this.translateY);
+    this.matrix = multiplyMatrix3D(this.tMatrix, this.sMatrix);
+  };
+
   /**
-   * Get new translation
-   * @param origin array of ball center to udpate
-   * @param angle angle for move
-   * @param distance distance to use for translation
-   * @returns update Position
+   * Execute action if x collision
    */
-  _updatePosition = (
-    origin: [number, number, number],
-    angle: number,
-    distance: number,
-  ): void => {
-    const rad = angle * (Math.PI / 180);
-    const deltaX = Math.max(
-      Math.min(origin[0] + distance * Math.cos(rad), 1),
-      -1,
+  _processCollisionX = () => {
+    this._angle = 180 - this._angle;
+    this.dispatch("collision", this.position[0].toString());
+  };
+
+  /**
+   * Execute action if y collision
+   */
+  _processCollisionY = () => {
+    this._angle = Math.min(
+      Math.max(this._angle, this._angleLimitInf),
+      this._angle,
+      this._angleLimitSup,
     );
-    const deltaY = Math.max(
-      Math.min(origin[1] + distance * Math.sin(rad), 1),
-      -1,
-    );
-    origin[0] = deltaX;
-    origin[1] = deltaY;
   };
 }

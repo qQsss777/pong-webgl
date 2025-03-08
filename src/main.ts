@@ -10,7 +10,7 @@ const appDiv = document.getElementById("app") as HTMLDivElement;
 
 const ball = new Ball({
   color: [0.0, 1.0, 0.0, 1.0],
-  speed: 0.007,
+  speed: 0.01,
 });
 
 const player = new Player({
