@@ -7,6 +7,9 @@ import Player from "./libs/views/player/Player";
 import "./style.css";
 
 const appDiv = document.getElementById("app") as HTMLDivElement;
+const counterDiv = document.getElementById("counter") as HTMLDivElement;
+
+const timeAfterCollision = 4000;
 
 const ball = new Ball({
   color: [0.0, 1.0, 0.0, 1.0],
@@ -36,9 +39,25 @@ const game = new Game({
   ball,
   players: [player, computer],
   canvasResizeObserver: new CanvasResizeObserver(),
+  timeAfterCollision: timeAfterCollision,
 });
-
+const statusChangeListenerRemove = game.subscribe("status", (status) => {
+  if (status === "paused") {
+    counterDiv.style.display = "block";
+    let seconds = Math.round(timeAfterCollision / 1000) - 1;
+    const intervalCounter = setInterval(() => {
+      if (seconds === 0) {
+        window.clearInterval(intervalCounter);
+        counterDiv.innerText = "";
+        counterDiv.style.display = "none";
+      }
+      counterDiv.innerText = seconds.toString();
+      seconds = seconds - 1;
+    }, 1000);
+  }
+});
 window.addEventListener("beforeunload", () => {
+  statusChangeListenerRemove();
   game.destroy();
 });
 
