@@ -3,30 +3,35 @@ import type Player from "../player/Player";
 import type Background from "../background/Background";
 import type CanvasResizeObserver from "../../html/CanvasResizeObserver";
 import { initShaderProgram } from "../../webgl/program";
+import { intersect } from "../../math/intersection";
 
 interface IGameConstructor {
   rootNode: HTMLDivElement;
   background: Background;
   ball: Ball;
-  players: Player[];
+  players: [Player, Player];
   canvasResizeObserver: CanvasResizeObserver;
 }
 interface IGameProperties extends IGameConstructor {
   start: () => void;
   destroy: () => void;
   pause: () => void;
+  reset: () => void;
+  context: WebGLRenderingContext;
+  program: WebGLProgram;
+  status: "stopped" | "started";
 }
 
 class Game implements IGameProperties {
   rootNode: HTMLDivElement;
   viewNode = document.createElement("canvas");
   ball: Ball;
-  players: Player[];
+  players: [Player, Player];
   background: Background;
   canvasResizeObserver: CanvasResizeObserver;
-  _context: WebGLRenderingContext;
-  _program: WebGLProgram;
-  _status: "stopped" | "started" = "stopped";
+  context: WebGLRenderingContext;
+  program: WebGLProgram;
+  status: "stopped" | "started" = "stopped";
 
   constructor(props: IGameConstructor) {
     this.rootNode = props.rootNode;
@@ -40,8 +45,8 @@ class Game implements IGameProperties {
     if (!program) {
       throw new Error("Issue wth shader program");
     }
-    this._program = program;
-    this._context = ctx;
+    this.program = program;
+    this.context = ctx;
     this.canvasResizeObserver = props.canvasResizeObserver;
     this.ball = props.ball;
     this.players = props.players;
@@ -53,8 +58,9 @@ class Game implements IGameProperties {
    * Display start screen
    */
   start = () => {
-    this._status = "started";
+    this.status = "started";
     this.draw();
+    console.log("started");
   };
 
   /**
@@ -69,7 +75,7 @@ class Game implements IGameProperties {
    * set game in pause mode
    */
   pause = () => {
-    this._status = "stopped";
+    this.status = "stopped";
   };
 
   /**
@@ -77,10 +83,10 @@ class Game implements IGameProperties {
    */
   draw = () => {
     this._clearCanvas();
-    this.background.draw(this._context, this._program);
-    this.players.forEach((pl) => pl.draw(this._context, this._program));
-    this.ball.draw(this._context, this._program);
-    if (this._status === "started")
+    this.background.draw(this.context, this.program);
+    this.players.forEach((pl) => pl.draw(this.context, this.program));
+    this.ball.draw(this.context, this.program);
+    if (this.status === "started")
       window.requestAnimationFrame(this.draw.bind(this));
   };
 
@@ -89,9 +95,14 @@ class Game implements IGameProperties {
    */
   redraw = () => {
     this._clearCanvas();
-    this.background.draw(this._context, this._program);
-    this.players.forEach((pl) => pl.redraw(this._context, this._program));
-    this.ball.redraw(this._context, this._program);
+    this.background.draw(this.context, this.program);
+    this.players.forEach((pl) => pl.redraw(this.context, this.program));
+    this.ball.redraw(this.context, this.program);
+  };
+
+  reset = () => {
+    this.ball.reset();
+    this.players.forEach((pl) => pl.reset());
   };
 
   /**
@@ -103,8 +114,26 @@ class Game implements IGameProperties {
       this.viewNode,
       this.redraw,
     );
+
+    // rules part
     this.ball.subscribe("collision", () => {
-      // this.pause();
+      let canContinue = false;
+      const ballData = this.ball.getPlayerInformations();
+      const side = Math.round(ballData.x[0]) === 1 ? "right" : "left";
+      const player = this.players.find((pl) => pl.side === side);
+      if (!player) return;
+      const playerData = player.getPlayerInformations().y;
+      canContinue = intersect(ballData.y, playerData);
+      if (!canContinue) {
+        this.pause();
+        setTimeout(() => {
+          this.reset();
+          this.start();
+          this.ball.speed += 0.0005;
+        }, 3000);
+      } else {
+        this.ball.speed += 0.0001;
+      }
     });
   };
 
@@ -112,10 +141,10 @@ class Game implements IGameProperties {
    * Clear canvas with black color
    */
   _clearCanvas = () => {
-    this._context.viewport(0, 0, this.viewNode.width, this.viewNode.height);
-    this._context.clearColor(0.0, 0.0, 0.0, 1.0);
-    this._context.clear(
-      this._context.COLOR_BUFFER_BIT | this._context.DEPTH_BUFFER_BIT,
+    this.context.viewport(0, 0, this.viewNode.width, this.viewNode.height);
+    this.context.clearColor(0.0, 0.0, 0.0, 1.0);
+    this.context.clear(
+      this.context.COLOR_BUFFER_BIT | this.context.DEPTH_BUFFER_BIT,
     );
   };
 }

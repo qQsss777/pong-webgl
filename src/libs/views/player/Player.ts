@@ -16,12 +16,11 @@ interface IPlayerConstructor {
 
 class Player extends DynamicActor implements IPlayerConstructor {
   playerController: PlayerController;
-  positions = [-1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 1.0, 0.0, -1.0, 1.0, 0.0];
+  position = [-1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 1.0, 0.0, -1.0, 1.0, 0.0];
   side: TSide = "right";
   speed: number;
   _width = 0.02;
   _height = 0.5;
-  _postionBuffer: WebGLBuffer;
 
   constructor(props: IPlayerConstructor) {
     super(props);
@@ -35,11 +34,12 @@ class Player extends DynamicActor implements IPlayerConstructor {
   }
 
   reset(): void {
-    throw new Error("Method not implemented.");
+    this.translateX = 0;
+    this.translateY = 0;
   }
 
   draw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
-    if (!this._postionBuffer) {
+    if (!this.positionBuffer) {
       this.initializeBuffers(gl);
     }
     if (!this.playerController) {
@@ -49,7 +49,7 @@ class Player extends DynamicActor implements IPlayerConstructor {
   };
 
   redraw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
-    if (!this._postionBuffer) {
+    if (!this.positionBuffer) {
       this.initializeBuffers(gl);
     }
     this._drawElement(gl, program);
@@ -58,11 +58,11 @@ class Player extends DynamicActor implements IPlayerConstructor {
   increaseLevel: () => void;
 
   initializeBuffers = (gl: WebGLRenderingContext) => {
-    this._postionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._postionBuffer);
+    this.positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
-      new Float32Array(this.positions),
+      new Float32Array(this.position),
       gl.STATIC_DRAW,
     );
   };
@@ -71,8 +71,8 @@ class Player extends DynamicActor implements IPlayerConstructor {
    * Initialize positions
    */
   _initializePosition = () => {
-    if (this.side === "right") {
-      this.positions = [
+    if (this.side === "left") {
+      this.position = [
         -1.0,
         -1.0,
         0.0,
@@ -86,8 +86,10 @@ class Player extends DynamicActor implements IPlayerConstructor {
         -1 + this._height,
         0.0,
       ];
+      this.xCoordinatesRanges = [-1, -1 + this._width];
+      this.yCoordinatesRanges = [-1, -1 + this._height];
     } else {
-      this.positions = [
+      this.position = [
         1.0 - this._width,
         -1.0,
         0.0,
@@ -101,6 +103,8 @@ class Player extends DynamicActor implements IPlayerConstructor {
         -1 + this._height,
         0.0,
       ];
+      this.xCoordinatesRanges = [1 - this._width, 1];
+      this.yCoordinatesRanges = [-1, -1 + this._height];
     }
   };
 
@@ -113,11 +117,11 @@ class Player extends DynamicActor implements IPlayerConstructor {
       program,
       "u_color",
     ) as WebGLUniformLocation;
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._postionBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
     gl.enableVertexAttribArray(positionAttribute);
     gl.vertexAttribPointer(positionAttribute, 3, gl.FLOAT, false, 0, 0);
     gl.uniform4fv(colorUniformBack, this.color);
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, this.positions.length / 3);
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, this.position.length / 3);
   };
 
   /**
@@ -134,6 +138,11 @@ class Player extends DynamicActor implements IPlayerConstructor {
       this.directionY = true;
       this.translateY = 0;
     }
+    const initalY = this.position[1];
+    this.yCoordinatesRanges = [
+      initalY + this.translateY,
+      initalY + this.translateY + this._height,
+    ];
     this.tMatrix = translateMatrix(this.translateX, this.translateY);
     this.sMatrix = scaleMatrix(this.scaleX, this.scaleY);
     this.matrix = multiplyMatrix3D(this.tMatrix, this.sMatrix);
