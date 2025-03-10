@@ -16,12 +16,12 @@ const ball = new Ball({
 const player = new Player({
   color: [0.0, 0.0, 1.0, 1.0],
   playerController: new PlayerController(),
-  side: "right",
+  side: "left",
   speed: 0.3,
 });
 const computer = new Player({
   color: [1.0, 0.0, 0.0, 1.0],
-  side: "left",
+  side: "right",
   speed: 0.01,
 });
 

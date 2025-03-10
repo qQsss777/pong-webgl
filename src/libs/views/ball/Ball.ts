@@ -19,7 +19,6 @@ export default class Ball extends DynamicActor implements IBallConstructor {
   _angleLimitSup = 135;
 
   _center: TCoordinates = [0.0, 0.0, 0.0];
-  _positionBuffer: WebGLBuffer;
   _angle: number;
 
   constructor(props: IBallConstructor) {
@@ -32,7 +31,7 @@ export default class Ball extends DynamicActor implements IBallConstructor {
   }
 
   draw = (gl: WebGLRenderingContext, program: WebGLProgram) => {
-    if (!this._positionBuffer) {
+    if (!this.positionBuffer) {
       this.initializeBuffers(gl);
     }
     this._updateMatrices();
@@ -45,7 +44,8 @@ export default class Ball extends DynamicActor implements IBallConstructor {
   };
 
   reset = () => {
-    this.position = [0.0, 0.0, 0.0];
+    this.translateX = 0;
+    this.translateY = 0;
     this._angle = this._generateRandomNumber(45, 135);
   };
 
@@ -58,7 +58,7 @@ export default class Ball extends DynamicActor implements IBallConstructor {
       program,
       "u_color",
     ) as WebGLUniformLocation;
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._positionBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
     gl.vertexAttribPointer(positionAttribute, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(positionAttribute);
     const uMatrix = gl.getUniformLocation(program, "u_matrix");
@@ -68,7 +68,7 @@ export default class Ball extends DynamicActor implements IBallConstructor {
   };
 
   initializeBuffers = (gl: WebGLRenderingContext) => {
-    this._positionBuffer = gl.createBuffer();
+    this.positionBuffer = gl.createBuffer();
     const segments = 360;
     const radius = this.getRadius(gl, this.radiusSource);
     this.radiusX = radius[0];
@@ -79,7 +79,15 @@ export default class Ball extends DynamicActor implements IBallConstructor {
       const y = this._center[1] + radius[1] * Math.sin(angle);
       this.position.push(x, y, 0.0);
     }
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._positionBuffer);
+    this.xCoordinatesRanges = [
+      this._center[0] - this.radiusX,
+      this._center[0] - this.radiusX,
+    ];
+    this.yCoordinatesRanges = [
+      this._center[1] - this.radiusY,
+      this._center[1] - this.radiusY,
+    ];
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
       new Float32Array(this.position),
@@ -134,6 +142,16 @@ export default class Ball extends DynamicActor implements IBallConstructor {
       this._processCollisionY();
       this.directionY = true;
     }
+    this.xCoordinatesRanges = [
+      this.translateX - this.radiusX,
+      this.translateX + this.radiusX,
+    ];
+    this.yCoordinatesRanges = this.directionY
+      ? [this.translateY - this.radiusY, this.translateY + this.radiusY]
+      : [
+          this._center[1] + this.translateY + this.radiusY,
+          this._center[1] + this.radiusY,
+        ];
     this.tMatrix = translateMatrix(this.translateX, this.translateY);
     this.matrix = multiplyMatrix3D(this.tMatrix, this.sMatrix);
   };
