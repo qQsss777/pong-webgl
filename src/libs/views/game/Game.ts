@@ -4,6 +4,7 @@ import type Background from "../background/Background";
 import type CanvasResizeObserver from "../../html/CanvasResizeObserver";
 import { initShaderProgram } from "../../webgl/program";
 import { intersect } from "../../math/intersection";
+import EventEmitter from "../../event/EventEmitter";
 
 interface IGameConstructor {
   rootNode: HTMLDivElement;
@@ -11,6 +12,7 @@ interface IGameConstructor {
   ball: Ball;
   players: [Player, Player];
   canvasResizeObserver: CanvasResizeObserver;
+  timeAfterCollision: number;
 }
 interface IGameProperties extends IGameConstructor {
   start: () => void;
@@ -19,10 +21,10 @@ interface IGameProperties extends IGameConstructor {
   reset: () => void;
   context: WebGLRenderingContext;
   program: WebGLProgram;
-  status: "stopped" | "started";
+  status: "stopped" | "started" | "paused";
 }
 
-class Game implements IGameProperties {
+class Game extends EventEmitter implements IGameProperties {
   rootNode: HTMLDivElement;
   viewNode = document.createElement("canvas");
   ball: Ball;
@@ -31,9 +33,11 @@ class Game implements IGameProperties {
   canvasResizeObserver: CanvasResizeObserver;
   context: WebGLRenderingContext;
   program: WebGLProgram;
-  status: "stopped" | "started" = "stopped";
+  status: "stopped" | "started" | "paused" = "stopped";
+  timeAfterCollision: number;
 
   constructor(props: IGameConstructor) {
+    super();
     this.rootNode = props.rootNode;
     this.viewNode.style.display = "block";
     this.rootNode.appendChild(this.viewNode);
@@ -45,6 +49,7 @@ class Game implements IGameProperties {
     if (!program) {
       throw new Error("Issue wth shader program");
     }
+    this.timeAfterCollision = props.timeAfterCollision;
     this.program = program;
     this.context = ctx;
     this.canvasResizeObserver = props.canvasResizeObserver;
@@ -59,8 +64,8 @@ class Game implements IGameProperties {
    */
   start = () => {
     this.status = "started";
+    this.dispatch("status", this.status);
     this.draw();
-    console.log("started");
   };
 
   /**
@@ -75,7 +80,8 @@ class Game implements IGameProperties {
    * set game in pause mode
    */
   pause = () => {
-    this.status = "stopped";
+    this.status = "paused";
+    this.dispatch("status", this.status);
   };
 
   /**
@@ -130,7 +136,7 @@ class Game implements IGameProperties {
           this.reset();
           this.start();
           this.ball.speed += 0.0005;
-        }, 3000);
+        }, this.timeAfterCollision);
       } else {
         this.ball.speed += 0.0001;
       }
