@@ -50,9 +50,10 @@ const statusChangeListenerRemove = game.subscribe("status", (status) => {
         window.clearInterval(intervalCounter);
         counterDiv.innerText = "";
         counterDiv.style.display = "none";
+      } else {
+        counterDiv.innerText = seconds.toString();
+        seconds = seconds - 1;
       }
-      counterDiv.innerText = seconds.toString();
-      seconds = seconds - 1;
     }, 1000);
   }
 });
