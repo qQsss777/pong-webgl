@@ -49,7 +49,9 @@ export default class Ball extends DynamicActor implements IBallConstructor {
     this._angle = this._generateRandomNumber(45, 135);
   };
 
-  increaseLevel: () => void;
+  increaseLevel = () => {
+    this.speed += 0.00005;
+  };
 
   _drawBall = (gl: WebGLRenderingContext, program: WebGLProgram) => {
     gl.useProgram(program);
@@ -73,6 +75,7 @@ export default class Ball extends DynamicActor implements IBallConstructor {
     const radius = this.getRadius(gl, this.radiusSource);
     this.radiusX = radius[0];
     this.radiusY = radius[1];
+    this.position = [];
     for (let i = 0; i <= segments; i++) {
       const angle = (2 * Math.PI * i) / segments;
       const x = this._center[0] + radius[0] * Math.cos(angle);
@@ -161,7 +164,7 @@ export default class Ball extends DynamicActor implements IBallConstructor {
    */
   _processCollisionX = () => {
     this._angle = 180 - this._angle;
-    this.dispatch("collision", this.position[0].toString());
+    this.dispatch("collisionX", this.position[0].toString());
   };
 
   /**
@@ -173,5 +176,6 @@ export default class Ball extends DynamicActor implements IBallConstructor {
       this._angle,
       this._angleLimitSup,
     );
+    this.dispatch("collisionY", this.position[1].toString());
   };
 }

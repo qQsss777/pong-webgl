@@ -122,7 +122,7 @@ class Game extends EventEmitter implements IGameProperties {
     );
 
     // rules part
-    this.ball.subscribe("collision", () => {
+    this.ball.subscribe("collisionX", () => {
       let canContinue = false;
       const ballData = this.ball.getPlayerInformations();
       const side = Math.round(ballData.x[0]) === 1 ? "right" : "left";
@@ -135,10 +135,9 @@ class Game extends EventEmitter implements IGameProperties {
         setTimeout(() => {
           this.reset();
           this.start();
-          this.ball.speed += 0.0005;
+          this.ball.increaseLevel();
+          if (player.side === "right") player.increaseLevel();
         }, this.timeAfterCollision);
-      } else {
-        this.ball.speed += 0.0001;
       }
     });
   };

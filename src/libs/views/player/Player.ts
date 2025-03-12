@@ -55,7 +55,9 @@ class Player extends DynamicActor implements IPlayerConstructor {
     this._drawElement(gl, program);
   };
 
-  increaseLevel: () => void;
+  increaseLevel = () => {
+    this.scaleY += 0.1;
+  };
 
   initializeBuffers = (gl: WebGLRenderingContext) => {
     this.positionBuffer = gl.createBuffer();
@@ -124,9 +126,6 @@ class Player extends DynamicActor implements IPlayerConstructor {
     gl.drawArrays(gl.TRIANGLE_FAN, 0, this.position.length / 3);
   };
 
-  /**
-   * Update matrice to calcule new positions
-   */
   _updateMatrices = (): void => {
     this.translateY = this.directionY
       ? this.translateY + this.speed
